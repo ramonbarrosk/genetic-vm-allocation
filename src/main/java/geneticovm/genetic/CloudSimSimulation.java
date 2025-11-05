@@ -20,77 +20,55 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Simulação CloudSim com Algoritmo Genético para alocação de VMs baseado em economia de energia.
- * Demonstra a integração completa entre:
- * - Criação de servidores (Hosts) e máquinas virtuais (VMs)
- * - Algoritmo genético para otimização de alocação
- * - Execução da simulação CloudSim
- * - Análise de resultados
- */
 public class CloudSimSimulation {
     
     public static void main(String[] args) {
         System.out.println("=== Simulação CloudSim com Algoritmo Genético ===\n");
         
-        // Desabilitar logging excessivo do CloudSim
         System.setProperty("org.slf4j.simpleLogger.log.org.cloudsimplus", "warn");
         
-        // 1. Criar o CloudSim (simulador principal)
         CloudSimPlus cloudsim = new CloudSimPlus();
         
-        // 2. Criar servidores (Hosts)
         List<Host> hosts = createHosts();
         System.out.println("✅ Criados " + hosts.size() + " servidores (hosts)");
         
-        // 3. Criar o Datacenter (centro de dados)
         Datacenter datacenter = createDatacenter(cloudsim, hosts);
         System.out.println("✅ Datacenter criado com " + hosts.size() + " hosts\n");
         
-        // 4. Criar máquinas virtuais (VMs)
         List<Vm> vms = createVMs();
         System.out.println("✅ Criadas " + vms.size() + " máquinas virtuais (VMs)");
         
-        // 5. Criar tarefas (Cloudlets)
         List<Cloudlet> cloudlets = createCloudlets();
         System.out.println("✅ Criadas " + cloudlets.size() + " tarefas (Cloudlets)\n");
         
-        // 6. Algoritmo Genético para alocação de VMs baseado em economia de energia
         System.out.println("🧬 === ALGORITMO GENÉTICO PARA ALOCAÇÃO DE VMs ===\n");
         EnergyAwareGeneticAlgorithm ga = new EnergyAwareGeneticAlgorithm(
             vms, hosts,
-            50,    // população
-            20,    // gerações (conforme especificado)
-            0.8,   // taxa de crossover
-            0.1,   // taxa de mutação
-            3,     // tamanho do torneio
-            System.currentTimeMillis() // seed
+            50,
+            20,
+            0.8,
+            0.1,
+            3,
+            System.currentTimeMillis()
         );
         
         EnergyAwareGeneticAlgorithm.AllocationSolution bestSolution = ga.run();
         
-        // 7. Criar o Broker e aplicar a alocação do algoritmo genético
         DatacenterBroker broker = new DatacenterBrokerSimple(cloudsim);
         broker.submitVmList(vms);
         broker.submitCloudletList(cloudlets);
         
-        // Aplicar alocação do algoritmo genético
         applyGeneticAllocation(broker, bestSolution, vms, hosts);
         System.out.println("✅ Alocação genética aplicada ao broker\n");
         
-        // 8. Executar a simulação
         System.out.println("🚀 Executando simulação...");
         cloudsim.start();
         
-        // 9. Mostrar resultados
         showResults(broker, cloudlets, vms, bestSolution, hosts);
         
         System.out.println("\n✅ Simulação concluída!");
     }
     
-    /**
-     * Cria uma lista de servidores físicos (Hosts)
-     */
     private static List<Host> createHosts() {
         List<Host> hosts = new ArrayList<>();
         
@@ -107,7 +85,7 @@ public class CloudSimSimulation {
         
         // Host 2: Servidor com 2 CPUs, 8GB RAM, 500GB Storage
         List<Pe> pes2 = new ArrayList<>();
-        pes2.add(new PeSimple(2000)); // 2000 MIPS por CPU (mais potente)
+        pes2.add(new PeSimple(2000)); // 2000 MIPS por CPU
         pes2.add(new PeSimple(2000));
         
         Host host2 = new HostSimple(8192, 5000, 500000, pes2); // 8GB RAM, 5Gbps, 500GB Storage
@@ -127,16 +105,10 @@ public class CloudSimSimulation {
         return hosts;
     }
     
-    /**
-     * Cria o Datacenter com os hosts
-     */
     private static Datacenter createDatacenter(CloudSimPlus cloudsim, List<Host> hosts) {
         return new DatacenterSimple(cloudsim, hosts);
     }
     
-    /**
-     * Cria uma lista de máquinas virtuais (VMs)
-     */
     private static List<Vm> createVMs() {
         List<Vm> vms = new ArrayList<>();
         
@@ -167,9 +139,6 @@ public class CloudSimSimulation {
         return vms;
     }
     
-    /**
-     * Cria uma lista de tarefas (Cloudlets)
-     */
     private static List<Cloudlet> createCloudlets() {
         List<Cloudlet> cloudlets = new ArrayList<>();
         
@@ -206,14 +175,9 @@ public class CloudSimSimulation {
         return cloudlets;
     }
     
-    /**
-     * Aplica a alocação do algoritmo genético ao broker
-     */
     private static void applyGeneticAllocation(DatacenterBroker broker, 
                                              EnergyAwareGeneticAlgorithm.AllocationSolution solution,
                                              List<Vm> vms, List<Host> hosts) {
-        // A alocação já será feita automaticamente pelo broker
-        // Mas podemos verificar a solução do algoritmo genético
         System.out.println("📋 Alocação do Algoritmo Genético:");
         System.out.println("-".repeat(60));
         var vmToHost = solution.getVmToHost();
@@ -226,19 +190,14 @@ public class CloudSimSimulation {
         System.out.println();
     }
     
-    /**
-     * Mostra os resultados da simulação
-     */
     private static void showResults(DatacenterBroker broker, List<Cloudlet> cloudlets, List<Vm> vms,
                                    EnergyAwareGeneticAlgorithm.AllocationSolution gaSolution,
                                    List<Host> hosts) {
         System.out.println("\n=== RESULTADOS DA SIMULAÇÃO ===\n");
         
-        // Mostrar informações sobre as VMs
         System.out.println("📊 INFORMAÇÕES DAS VMs:");
         System.out.println("-".repeat(60));
         for (Vm vm : broker.getVmCreatedList()) {
-            // Verificar se a VM foi alocada
             try {
                 var host = vm.getHost();
                 if (host != null) {
@@ -256,7 +215,6 @@ public class CloudSimSimulation {
         }
         System.out.println();
         
-        // Mostrar informações sobre os Cloudlets
         System.out.println("📋 RESULTADOS DOS CLOUDLETS:");
         System.out.println("-".repeat(60));
         for (Cloudlet cloudlet : broker.getCloudletFinishedList()) {
@@ -273,7 +231,6 @@ public class CloudSimSimulation {
             System.out.println();
         }
         
-        // Estatísticas gerais
         System.out.println("📈 ESTATÍSTICAS GERAIS:");
         System.out.println("-".repeat(60));
         double totalExecutionTime = broker.getCloudletFinishedList().stream()
@@ -284,7 +241,6 @@ public class CloudSimSimulation {
         System.out.printf("VMs criadas: %d%n", broker.getVmCreatedList().size());
         System.out.printf("Cloudlets executados: %d%n", broker.getCloudletFinishedList().size());
         
-        // Estatísticas do algoritmo genético
         if (gaSolution != null) {
             System.out.println("\n📊 ESTATÍSTICAS DO ALGORITMO GENÉTICO:");
             System.out.println("-".repeat(60));

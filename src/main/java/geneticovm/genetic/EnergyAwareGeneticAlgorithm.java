@@ -5,11 +5,6 @@ import org.cloudsimplus.vms.Vm;
 
 import java.util.*;
 
-/**
- * Algoritmo Genético para alocação de VMs baseado em economia de energia.
- * Implementa: Inicialização, Avaliação (Fitness), Seleção por Torneio,
- * Crossover Uniforme, Mutação e Condição de Término.
- */
 public class EnergyAwareGeneticAlgorithm {
     
     private final List<Vm> vms;
@@ -37,13 +32,9 @@ public class EnergyAwareGeneticAlgorithm {
         this.tournamentSize = tournamentSize;
         this.random = new Random(seed);
         
-        // Inicializar matriz de comunicação (simplificada)
         this.communicationMatrix = initializeCommunicationMatrix();
     }
     
-    /**
-     * Inicializa matriz de comunicação entre VMs
-     */
     private double[][] initializeCommunicationMatrix() {
         int n = vms.size();
         double[][] matrix = new double[n][n];
@@ -60,11 +51,7 @@ public class EnergyAwareGeneticAlgorithm {
         return matrix;
     }
     
-    /**
-     * Executa o algoritmo genético
-     */
     public AllocationSolution run() {
-        // 1. Inicialização da população
         List<AllocationSolution> population = initializePopulation();
         
         AllocationSolution bestSolution = null;
@@ -73,7 +60,6 @@ public class EnergyAwareGeneticAlgorithm {
         System.out.println("🧬 Executando Algoritmo Genético...");
         System.out.printf("  População: %d, Gerações: %d%n", populationSize, maxGenerations);
         
-        // Avaliar população inicial
         for (AllocationSolution individual : population) {
             double fitness = evaluateFitness(individual);
             individual.setFitness(fitness);
@@ -83,34 +69,26 @@ public class EnergyAwareGeneticAlgorithm {
             }
         }
         
-        // Evolução
         for (int generation = 0; generation < maxGenerations; generation++) {
             List<AllocationSolution> newPopulation = new ArrayList<>();
             
-            // Elitismo: manter o melhor indivíduo
             newPopulation.add(new AllocationSolution(bestSolution));
             
-            // Criar novos indivíduos
             while (newPopulation.size() < populationSize) {
-                // Seleção por torneio
                 AllocationSolution parent1 = tournamentSelection(population);
                 AllocationSolution parent2 = tournamentSelection(population);
                 
-                // Crossover uniforme
                 AllocationSolution child = uniformCrossover(parent1, parent2);
                 
-                // Mutação
                 if (random.nextDouble() < mutationRate) {
                     mutate(child);
                 }
                 
-                // Avaliar fitness do filho
                 double fitness = evaluateFitness(child);
                 child.setFitness(fitness);
                 
                 newPopulation.add(child);
                 
-                // Atualizar melhor solução
                 if (fitness < bestFitness) {
                     bestFitness = fitness;
                     bestSolution = new AllocationSolution(child);
@@ -129,16 +107,12 @@ public class EnergyAwareGeneticAlgorithm {
         return bestSolution;
     }
     
-    /**
-     * Inicializa população aleatória
-     */
     private List<AllocationSolution> initializePopulation() {
         List<AllocationSolution> population = new ArrayList<>();
         
         for (int i = 0; i < populationSize; i++) {
             AllocationSolution solution = new AllocationSolution(vms, hosts);
             
-            // Alocar cada VM aleatoriamente em um host
             for (Vm vm : vms) {
                 Host randomHost = hosts.get(random.nextInt(hosts.size()));
                 solution.allocateVM(vm, randomHost);
@@ -150,11 +124,6 @@ public class EnergyAwareGeneticAlgorithm {
         return population;
     }
     
-    /**
-     * Avalia o fitness de uma solução focada em economia de energia
-     * Penaliza: sobrecarga (forte), hosts ativos desnecessários (forte), 
-     * desperdício de recursos (médio), comunicação (médio)
-     */
     private double evaluateFitness(AllocationSolution solution) {
         double fitness = 0.0;
         int activeHostsCount = 0;
@@ -240,9 +209,6 @@ public class EnergyAwareGeneticAlgorithm {
         return fitness;
     }
     
-    /**
-     * Calcula custo de comunicação quando VMs que se comunicam estão distantes
-     */
     private double calculateCommunicationCost(AllocationSolution solution) {
         double cost = 0.0;
         
@@ -257,9 +223,7 @@ public class EnergyAwareGeneticAlgorithm {
                     Host host2 = solution.getHostForVM(vm2);
                     
                     if (host1 != null && host2 != null) {
-                        // Se estão em hosts diferentes, há custo de comunicação
                         if (!host1.equals(host2)) {
-                            // Distância simplificada: número de hosts entre eles
                             int distance = Math.abs((int)(host1.getId() - host2.getId())) + 1;
                             cost += communication * distance;
                         }
@@ -268,12 +232,9 @@ public class EnergyAwareGeneticAlgorithm {
             }
         }
         
-        return cost / (vms.size() * (vms.size() - 1) / 2.0); // Normalizar
+        return cost / (vms.size() * (vms.size() - 1) / 2.0);
     }
     
-    /**
-     * Seleção por torneio
-     */
     private AllocationSolution tournamentSelection(List<AllocationSolution> population) {
         AllocationSolution best = null;
         double bestFitness = Double.MAX_VALUE;
@@ -289,21 +250,16 @@ public class EnergyAwareGeneticAlgorithm {
         return new AllocationSolution(best);
     }
     
-    /**
-     * Crossover uniforme: para cada VM, escolhe aleatoriamente de qual pai herdar
-     */
     private AllocationSolution uniformCrossover(AllocationSolution parent1, AllocationSolution parent2) {
         AllocationSolution child = new AllocationSolution(vms, hosts);
         
         for (Vm vm : vms) {
             if (random.nextDouble() < crossoverRate) {
-                // Herda de parent1
                 Host host = parent1.getHostForVM(vm);
                 if (host != null) {
                     child.allocateVM(vm, host);
                 }
             } else {
-                // Herda de parent2
                 Host host = parent2.getHostForVM(vm);
                 if (host != null) {
                     child.allocateVM(vm, host);
@@ -323,7 +279,6 @@ public class EnergyAwareGeneticAlgorithm {
         
         Vm selectedVM = vms.get(random.nextInt(vms.size()));
         
-        // Filtrar hosts que podem acomodar a VM
         List<Host> availableHosts = new ArrayList<>();
         for (Host host : hosts) {
             if (canHostAccommodateVM(host, selectedVM, solution)) {
@@ -332,11 +287,9 @@ public class EnergyAwareGeneticAlgorithm {
         }
         
         if (availableHosts.isEmpty()) {
-            // Nenhum host pode acomodar a VM, mutação cancelada
             return;
         }
         
-        // Separar hosts já utilizados (com outras VMs) e hosts vazios
         List<Host> usedHosts = new ArrayList<>();
         List<Host> emptyHosts = new ArrayList<>();
         
@@ -344,10 +297,9 @@ public class EnergyAwareGeneticAlgorithm {
         
         for (Host host : availableHosts) {
             List<Vm> vmsOnHost = solution.getVmsOnHost(host);
-            // Se o host já tem VMs (além da VM atual se ela estiver neste host), considera como usado
             int vmCountExcludingCurrent = vmsOnHost.size();
             if (host.equals(currentHost) && vmsOnHost.contains(selectedVM)) {
-                vmCountExcludingCurrent--; // Não contar a VM atual
+                vmCountExcludingCurrent--;
             }
             
             if (vmCountExcludingCurrent > 0) {
@@ -363,16 +315,12 @@ public class EnergyAwareGeneticAlgorithm {
         if (!usedHosts.isEmpty() && random.nextDouble() < 0.7) {
             newHost = usedHosts.get(random.nextInt(usedHosts.size()));
         } else {
-            // Escolhe aleatoriamente entre todos os hosts disponíveis
             newHost = availableHosts.get(random.nextInt(availableHosts.size()));
         }
         
         solution.reallocateVM(selectedVM, newHost);
     }
     
-    /**
-     * Verifica se um host pode acomodar uma VM sem sobrecarga
-     */
     private boolean canHostAccommodateVM(Host host, Vm vm, AllocationSolution solution) {
         List<Vm> vmsOnHost = solution.getVmsOnHost(host);
         
@@ -399,9 +347,6 @@ public class EnergyAwareGeneticAlgorithm {
                bandwidthDemand <= bandwidthCapacity;
     }
     
-    /**
-     * Classe interna para representar uma solução de alocação
-     */
     public static class AllocationSolution {
         private final Map<Vm, Host> vmToHost;
         private final Set<Host> activeHosts;
@@ -433,7 +378,6 @@ public class EnergyAwareGeneticAlgorithm {
         public void reallocateVM(Vm vm, Host newHost) {
             Host oldHost = vmToHost.remove(vm);
             if (oldHost != null) {
-                // Verificar se host antigo ainda tem VMs
                 boolean hostStillUsed = vmToHost.values().contains(oldHost);
                 if (!hostStillUsed) {
                     activeHosts.remove(oldHost);
