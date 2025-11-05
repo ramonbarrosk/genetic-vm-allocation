@@ -151,20 +151,24 @@ public class EnergyAwareGeneticAlgorithm {
     }
     
     /**
-     * Avalia o fitness de uma solução (Equação 12)
-     * Penaliza: sobrecarga (forte), desperdício (médio), comunicação (médio)
+     * Avalia o fitness de uma solução focada em economia de energia
+     * Penaliza: sobrecarga (forte), hosts ativos desnecessários (forte), 
+     * desperdício de recursos (médio), comunicação (médio)
      */
     private double evaluateFitness(AllocationSolution solution) {
         double fitness = 0.0;
+        int activeHostsCount = 0;
         
         // Para cada host
         for (Host host : hosts) {
             List<Vm> vmsOnHost = solution.getVmsOnHost(host);
             
             if (vmsOnHost.isEmpty()) {
-                // Host ocioso não é penalizado
+                // Host ocioso não é penalizado (pois não está consumindo energia)
                 continue;
             }
+            
+            activeHostsCount++;
             
             // Calcular demanda total de recursos
             double cpuDemand = 0.0;
@@ -200,14 +204,34 @@ public class EnergyAwareGeneticAlgorithm {
                 fitness += 10.0 * (bandwidthDemand - bandwidthCapacity) / bandwidthCapacity;
             }
             
-            // Penalização por desperdício de recursos (MÉDIO - peso 1.0)
-            double cpuWaste = Math.max(0, cpuCapacity - cpuDemand) / cpuCapacity;
-            double ramWaste = Math.max(0, ramCapacity - ramDemand) / ramCapacity;
-            double storageWaste = Math.max(0, storageCapacity - storageDemand) / storageCapacity;
-            double bandwidthWaste = Math.max(0, bandwidthCapacity - bandwidthDemand) / bandwidthCapacity;
+            // Calcular utilização média do host
+            double cpuUtilization = cpuDemand / cpuCapacity;
+            double ramUtilization = ramDemand / ramCapacity;
+            double storageUtilization = storageDemand / storageCapacity;
+            double bandwidthUtilization = bandwidthDemand / bandwidthCapacity;
+            double avgUtilization = (cpuUtilization + ramUtilization + storageUtilization + bandwidthUtilization) / 4.0;
             
-            fitness += 1.0 * (cpuWaste + ramWaste + storageWaste + bandwidthWaste) / 4.0;
+            // Penalização por desperdício de recursos quando a utilização é muito baixa (MÉDIO - peso 2.0)
+            // Isso incentiva a consolidação: hosts com baixa utilização são fortemente penalizados
+            if (avgUtilization < 0.3) {
+                // Host com menos de 30% de utilização é penalizado
+                // Quanto menor a utilização, maior a penalização
+                double wastePenalty = 2.0 * (0.3 - avgUtilization) / 0.3;
+                fitness += wastePenalty;
+            } else {
+                // Para hosts com utilização razoável, penalização menor pelo desperdício
+                double cpuWaste = Math.max(0, cpuCapacity - cpuDemand) / cpuCapacity;
+                double ramWaste = Math.max(0, ramCapacity - ramDemand) / ramCapacity;
+                double storageWaste = Math.max(0, storageCapacity - storageDemand) / storageCapacity;
+                double bandwidthWaste = Math.max(0, bandwidthCapacity - bandwidthDemand) / bandwidthCapacity;
+                fitness += 0.5 * (cpuWaste + ramWaste + storageWaste + bandwidthWaste) / 4.0;
+            }
         }
+        
+        // Penalização por número de hosts ativos (FORTE - peso 3.0 por host)
+        // Quanto mais hosts ativos, mais energia consumida
+        // Isso é o componente principal para economizar energia
+        fitness += 3.0 * activeHostsCount;
         
         // Penalização por custo de comunicação (MÉDIO - peso 1.0)
         double communicationCost = calculateCommunicationCost(solution);
@@ -291,19 +315,59 @@ public class EnergyAwareGeneticAlgorithm {
     }
     
     /**
-     * Mutação: move uma VM aleatória para outro host aleatório
+     * Mutação: move uma VM aleatória para outro host.
+     * Prefere hosts já utilizados para incentivar consolidação e economia de energia.
      */
     private void mutate(AllocationSolution solution) {
         if (vms.isEmpty()) return;
         
         Vm selectedVM = vms.get(random.nextInt(vms.size()));
-        Host newHost = hosts.get(random.nextInt(hosts.size()));
         
-        // Verificar se a mudança causa sobrecarga
-        if (canHostAccommodateVM(newHost, selectedVM, solution)) {
-            solution.reallocateVM(selectedVM, newHost);
+        // Filtrar hosts que podem acomodar a VM
+        List<Host> availableHosts = new ArrayList<>();
+        for (Host host : hosts) {
+            if (canHostAccommodateVM(host, selectedVM, solution)) {
+                availableHosts.add(host);
+            }
         }
-        // Se causar sobrecarga, a mutação é cancelada
+        
+        if (availableHosts.isEmpty()) {
+            // Nenhum host pode acomodar a VM, mutação cancelada
+            return;
+        }
+        
+        // Separar hosts já utilizados (com outras VMs) e hosts vazios
+        List<Host> usedHosts = new ArrayList<>();
+        List<Host> emptyHosts = new ArrayList<>();
+        
+        Host currentHost = solution.getHostForVM(selectedVM);
+        
+        for (Host host : availableHosts) {
+            List<Vm> vmsOnHost = solution.getVmsOnHost(host);
+            // Se o host já tem VMs (além da VM atual se ela estiver neste host), considera como usado
+            int vmCountExcludingCurrent = vmsOnHost.size();
+            if (host.equals(currentHost) && vmsOnHost.contains(selectedVM)) {
+                vmCountExcludingCurrent--; // Não contar a VM atual
+            }
+            
+            if (vmCountExcludingCurrent > 0) {
+                usedHosts.add(host);
+            } else {
+                emptyHosts.add(host);
+            }
+        }
+        
+        Host newHost;
+        // 70% de chance de preferir hosts já utilizados (consolidação)
+        // Isso economiza energia ao evitar ligar hosts novos desnecessariamente
+        if (!usedHosts.isEmpty() && random.nextDouble() < 0.7) {
+            newHost = usedHosts.get(random.nextInt(usedHosts.size()));
+        } else {
+            // Escolhe aleatoriamente entre todos os hosts disponíveis
+            newHost = availableHosts.get(random.nextInt(availableHosts.size()));
+        }
+        
+        solution.reallocateVM(selectedVM, newHost);
     }
     
     /**
