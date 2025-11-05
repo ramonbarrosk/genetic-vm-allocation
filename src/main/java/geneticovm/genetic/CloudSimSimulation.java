@@ -30,18 +30,18 @@ public class CloudSimSimulation {
         CloudSimPlus cloudsim = new CloudSimPlus();
         
         List<Host> hosts = createHosts();
-        System.out.println("✅ Criados " + hosts.size() + " servidores (hosts)");
+        System.out.println("Criados " + hosts.size() + " servidores (hosts)");
         
         Datacenter datacenter = createDatacenter(cloudsim, hosts);
-        System.out.println("✅ Datacenter criado com " + hosts.size() + " hosts\n");
+        System.out.println("Datacenter criado com " + hosts.size() + " hosts\n");
         
         List<Vm> vms = createVMs();
-        System.out.println("✅ Criadas " + vms.size() + " máquinas virtuais (VMs)");
+        System.out.println("Criadas " + vms.size() + " máquinas virtuais (VMs)");
         
         List<Cloudlet> cloudlets = createCloudlets();
-        System.out.println("✅ Criadas " + cloudlets.size() + " tarefas (Cloudlets)\n");
+        System.out.println("Criadas " + cloudlets.size() + " tarefas (Cloudlets)\n");
         
-        System.out.println("🧬 === ALGORITMO GENÉTICO PARA ALOCAÇÃO DE VMs ===\n");
+        System.out.println("=== ALGORITMO GENÉTICO PARA ALOCAÇÃO DE VMs ===\n");
         EnergyAwareGeneticAlgorithm ga = new EnergyAwareGeneticAlgorithm(
             vms, hosts,
             50,
@@ -59,14 +59,14 @@ public class CloudSimSimulation {
         broker.submitCloudletList(cloudlets);
         
         applyGeneticAllocation(broker, bestSolution, vms, hosts);
-        System.out.println("✅ Alocação genética aplicada ao broker\n");
+        System.out.println("Alocação genética aplicada ao broker\n");
         
-        System.out.println("🚀 Executando simulação...");
+        System.out.println("Executando simulação...");
         cloudsim.start();
         
         showResults(broker, cloudlets, vms, bestSolution, hosts);
         
-        System.out.println("\n✅ Simulação concluída!");
+        System.out.println("\nSimulação concluída!");
     }
     
     private static List<Host> createHosts() {
@@ -178,7 +178,7 @@ public class CloudSimSimulation {
     private static void applyGeneticAllocation(DatacenterBroker broker, 
                                              EnergyAwareGeneticAlgorithm.AllocationSolution solution,
                                              List<Vm> vms, List<Host> hosts) {
-        System.out.println("📋 Alocação do Algoritmo Genético:");
+        System.out.println("Alocação do Algoritmo Genético:");
         System.out.println("-".repeat(60));
         var vmToHost = solution.getVmToHost();
         for (Map.Entry<Vm, Host> entry : vmToHost.entrySet()) {
@@ -195,27 +195,27 @@ public class CloudSimSimulation {
                                    List<Host> hosts) {
         System.out.println("\n=== RESULTADOS DA SIMULAÇÃO ===\n");
         
-        System.out.println("📊 INFORMAÇÕES DAS VMs:");
+        System.out.println("INFORMAÇÕES DAS VMs:");
         System.out.println("-".repeat(60));
         for (Vm vm : broker.getVmCreatedList()) {
             try {
                 var host = vm.getHost();
                 if (host != null) {
-                    System.out.printf("VM %d: ✅ CRIADA E ALOCADA%n", vm.getId());
+                    System.out.printf("VM %d: CRIADA E ALOCADA%n", vm.getId());
                     System.out.printf("  - Alocada em Host: %d%n", host.getId());
                     System.out.printf("  - CPUs: %d, RAM: %d MB, Storage: %d MB%n", 
                         vm.getPesNumber(), vm.getRam().getCapacity(), vm.getStorage().getCapacity());
                 } else {
-                    System.out.printf("VM %d: ❌ NÃO ALOCADA%n", vm.getId());
-                    System.out.printf("  - ⚠️  Esta VM não pôde ser alocada em nenhum host%n");
+                    System.out.printf("VM %d: NÃO ALOCADA%n", vm.getId());
+                    System.out.printf("  - Esta VM não pôde ser alocada em nenhum host%n");
                 }
             } catch (Exception e) {
-                System.out.printf("VM %d: ❌ ERRO AO VERIFICAR%n", vm.getId());
+                System.out.printf("VM %d: ERRO AO VERIFICAR%n", vm.getId());
             }
         }
         System.out.println();
         
-        System.out.println("📋 RESULTADOS DOS CLOUDLETS:");
+        System.out.println("RESULTADOS DOS CLOUDLETS:");
         System.out.println("-".repeat(60));
         for (Cloudlet cloudlet : broker.getCloudletFinishedList()) {
             System.out.printf("Cloudlet %d:%n", cloudlet.getId());
@@ -231,7 +231,7 @@ public class CloudSimSimulation {
             System.out.println();
         }
         
-        System.out.println("📈 ESTATÍSTICAS GERAIS:");
+        System.out.println("ESTATÍSTICAS GERAIS:");
         System.out.println("-".repeat(60));
         double totalExecutionTime = broker.getCloudletFinishedList().stream()
             .mapToDouble(Cloudlet::getFinishTime)
@@ -242,7 +242,7 @@ public class CloudSimSimulation {
         System.out.printf("Cloudlets executados: %d%n", broker.getCloudletFinishedList().size());
         
         if (gaSolution != null) {
-            System.out.println("\n📊 ESTATÍSTICAS DO ALGORITMO GENÉTICO:");
+            System.out.println("\nESTATÍSTICAS DO ALGORITMO GENÉTICO:");
             System.out.println("-".repeat(60));
             System.out.printf("Hosts ativos utilizados: %d de %d%n", 
                 gaSolution.getActiveHostsCount(), hosts.size());

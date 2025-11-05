@@ -57,7 +57,7 @@ public class EnergyAwareGeneticAlgorithm {
         AllocationSolution bestSolution = null;
         double bestFitness = Double.MAX_VALUE;
         
-        System.out.println("🧬 Executando Algoritmo Genético...");
+        System.out.println("Executando Algoritmo Genético...");
         System.out.printf("  População: %d, Gerações: %d%n", populationSize, maxGenerations);
         
         for (AllocationSolution individual : population) {
@@ -103,7 +103,7 @@ public class EnergyAwareGeneticAlgorithm {
             }
         }
         
-        System.out.println("✅ Algoritmo Genético concluído!\n");
+        System.out.println("Algoritmo Genético concluído!\n");
         return bestSolution;
     }
     
