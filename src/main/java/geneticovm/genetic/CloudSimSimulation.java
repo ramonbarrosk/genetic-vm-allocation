@@ -71,36 +71,36 @@ public class CloudSimSimulation {
     
     private static List<Host> createHosts() {
         List<Host> hosts = new ArrayList<>();
+        int[][] hostConfigs = {
+            {4, 1000, 16384, 10000, 1000000},
+            {2, 2000, 8192, 5000, 500000},
+            {8, 1500, 32768, 20000, 2000000},
+            {4, 1200, 16384, 10000, 1000000},
+            {6, 1500, 24576, 15000, 1500000},
+            {2, 1800, 8192, 5000, 500000},
+            {8, 1400, 32768, 20000, 2000000},
+            {4, 1600, 16384, 10000, 1000000},
+            {6, 1300, 24576, 15000, 1500000},
+            {4, 1100, 16384, 10000, 1000000}
+        };
         
-        // Host 1: Servidor com 4 CPUs, 16GB RAM, 1TB Storage
-        List<Pe> pes1 = new ArrayList<>();
-        pes1.add(new PeSimple(1000)); // 1000 MIPS por CPU
-        pes1.add(new PeSimple(1000));
-        pes1.add(new PeSimple(1000));
-        pes1.add(new PeSimple(1000));
-        
-        Host host1 = new HostSimple(16384, 10000, 1000000, pes1); // 16GB RAM, 10Gbps, 1TB Storage
-        host1.setId(0);
-        hosts.add(host1);
-        
-        // Host 2: Servidor com 2 CPUs, 8GB RAM, 500GB Storage
-        List<Pe> pes2 = new ArrayList<>();
-        pes2.add(new PeSimple(2000)); // 2000 MIPS por CPU
-        pes2.add(new PeSimple(2000));
-        
-        Host host2 = new HostSimple(8192, 5000, 500000, pes2); // 8GB RAM, 5Gbps, 500GB Storage
-        host2.setId(1);
-        hosts.add(host2);
-        
-        // Host 3: Servidor com 8 CPUs, 32GB RAM, 2TB Storage
-        List<Pe> pes3 = new ArrayList<>();
-        for (int i = 0; i < 8; i++) {
-            pes3.add(new PeSimple(1500)); // 1500 MIPS por CPU
+        for (int i = 0; i < hostConfigs.length; i++) {
+            int[] config = hostConfigs[i];
+            int cpuCount = config[0];
+            int mips = config[1];
+            int ram = config[2];
+            int bw = config[3];
+            int storage = config[4];
+            
+            List<Pe> pes = new ArrayList<>();
+            for (int j = 0; j < cpuCount; j++) {
+                pes.add(new PeSimple(mips));
+            }
+            
+            Host host = new HostSimple(ram, bw, storage, pes);
+            host.setId(i);
+            hosts.add(host);
         }
-        
-        Host host3 = new HostSimple(32768, 20000, 2000000, pes3); // 32GB RAM, 20Gbps, 2TB Storage
-        host3.setId(2);
-        hosts.add(host3);
         
         return hosts;
     }
@@ -111,66 +111,61 @@ public class CloudSimSimulation {
     
     private static List<Vm> createVMs() {
         List<Vm> vms = new ArrayList<>();
+        int[][] vmConfigs = {
+            {1000, 1, 2048, 1000, 100000},
+            {1000, 1, 2048, 1000, 100000},
+            {1500, 2, 4096, 2000, 200000},
+            {1000, 1, 1024, 1000, 50000},
+            {1200, 1, 2048, 1500, 150000},
+            {1000, 1, 2048, 1000, 100000},
+            {1500, 2, 4096, 2000, 200000},
+            {1000, 1, 1024, 1000, 50000},
+            {1800, 2, 4096, 2000, 200000},
+            {1000, 1, 2048, 1000, 100000},
+            {1200, 1, 3072, 1500, 150000},
+            {1000, 1, 1024, 1000, 50000},
+            {1500, 2, 4096, 2000, 200000},
+            {1000, 1, 2048, 1000, 100000},
+            {1600, 2, 4096, 2000, 200000},
+            {1000, 1, 1024, 1000, 50000},
+            {1200, 1, 2048, 1500, 150000},
+            {1000, 1, 2048, 1000, 100000},
+            {1500, 2, 4096, 2000, 200000},
+            {1000, 1, 1024, 1000, 50000}
+        };
         
-        // VM 1: Pequena - 1 CPU, 2GB RAM, 100GB Storage
-        Vm vm1 = new VmSimple(1000, 1); // 1000 MIPS, 1 CPU
-        vm1.setRam(2048).setBw(1000).setSize(100000); // 2GB RAM, 1Gbps, 100GB
-        vm1.setId(0);
-        vms.add(vm1);
-        
-        // VM 2: Média - 1 CPU, 2GB RAM, 100GB Storage
-        Vm vm2 = new VmSimple(1000, 1); // 1000 MIPS, 1 CPU
-        vm2.setRam(2048).setBw(1000).setSize(100000); // 2GB RAM, 1Gbps, 100GB
-        vm2.setId(1);
-        vms.add(vm2);
-        
-        // VM 3: Grande - 2 CPUs, 4GB RAM, 200GB Storage
-        Vm vm3 = new VmSimple(1500, 2); // 1500 MIPS, 2 CPUs
-        vm3.setRam(4096).setBw(2000).setSize(200000); // 4GB RAM, 2Gbps, 200GB
-        vm3.setId(2);
-        vms.add(vm3);
-        
-        // VM 4: Pequena - 1 CPU, 1GB RAM, 50GB Storage
-        Vm vm4 = new VmSimple(1000, 1); // 1000 MIPS, 1 CPU
-        vm4.setRam(1024).setBw(1000).setSize(50000); // 1GB RAM, 1Gbps, 50GB
-        vm4.setId(3);
-        vms.add(vm4);
+        for (int i = 0; i < vmConfigs.length; i++) {
+            int[] config = vmConfigs[i];
+            int mips = config[0];
+            int cpus = config[1];
+            int ram = config[2];
+            int bw = config[3];
+            int storage = config[4];
+            
+            Vm vm = new VmSimple(mips, cpus);
+            vm.setRam(ram).setBw(bw).setSize(storage);
+            vm.setId(i);
+            vms.add(vm);
+        }
         
         return vms;
     }
     
     private static List<Cloudlet> createCloudlets() {
         List<Cloudlet> cloudlets = new ArrayList<>();
+        int[] cloudletSizes = {
+            10000, 50000, 100000, 20000, 75000,
+            15000, 60000, 120000, 30000, 80000,
+            25000, 70000, 110000, 40000, 90000,
+            18000, 55000, 95000, 35000, 65000
+        };
         
-        // Cloudlet 1: Tarefa pequena - 10000 MI (Million Instructions)
-        Cloudlet cloudlet1 = new CloudletSimple(10000, 1);
-        cloudlet1.setUtilizationModel(new UtilizationModelFull());
-        cloudlet1.setId(0);
-        cloudlets.add(cloudlet1);
-        
-        // Cloudlet 2: Tarefa média - 50000 MI
-        Cloudlet cloudlet2 = new CloudletSimple(50000, 1);
-        cloudlet2.setUtilizationModel(new UtilizationModelFull());
-        cloudlet2.setId(1);
-        cloudlets.add(cloudlet2);
-        
-        // Cloudlet 3: Tarefa grande - 100000 MI
-        Cloudlet cloudlet3 = new CloudletSimple(100000, 1);
-        cloudlet3.setUtilizationModel(new UtilizationModelFull());
-        cloudlet3.setId(2);
-        cloudlets.add(cloudlet3);
-        
-        // Cloudlet 4: Tarefa pequena - 20000 MI
-        Cloudlet cloudlet4 = new CloudletSimple(20000, 1);
-        cloudlet4.setUtilizationModel(new UtilizationModelFull());
-        cloudlet4.setId(3);
-        cloudlets.add(cloudlet4);
-        
-        // Cloudlet 5: Tarefa média - 75000 MI
-        Cloudlet cloudlet5 = new CloudletSimple(75000, 1);
-        cloudlet5.setUtilizationModel(new UtilizationModelFull());
-        cloudlet5.setId(4);
-        cloudlets.add(cloudlet5);
+        for (int i = 0; i < cloudletSizes.length; i++) {
+            Cloudlet cloudlet = new CloudletSimple(cloudletSizes[i], 1);
+            cloudlet.setUtilizationModel(new UtilizationModelFull());
+            cloudlet.setId(i);
+            cloudlets.add(cloudlet);
+        }
         
         return cloudlets;
     }
